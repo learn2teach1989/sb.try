@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>SB Treasury Tool · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f1530; --panel:#161e3b; --line:rgba(255,255,255,.10); --text:#e8eaf4; --muted:#9aa3c2;
+  --gold:#ffd86b; --teal:#8fe3d6; --red:#ff8a95; --redbg:rgba(232,93,107,.14); --green:#86efac;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--text);font-family:"Noto Sans Tamil","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5}
+body{padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+button,input{font:inherit}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:6px 0 14px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:18px;font-weight:700;color:var(--gold)}
+header .who{font-size:12px;color:var(--muted);word-break:break-all}
+.btn{border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--text);padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13.5px}
+.btn:hover{background:rgba(255,255,255,.1)}
+.btn.gold{background:var(--gold);color:#1c1a10;border-color:var(--gold)}
+.btn.block{color:var(--red);border-color:rgba(255,138,149,.45)}
+.btn.unblock{color:var(--green);border-color:rgba(134,239,172,.45)}
+.btn[disabled]{opacity:.55;cursor:wait}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.center{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:20px}
+.center p{color:var(--muted);max-width:420px;margin:0}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:16px 0}
+.stats div{background:var(--panel);padding:12px 10px}
+.stats b{display:block;font-size:22px;color:#fff;font-variant-numeric:tabular-nums}
+.stats span{font-size:12px;color:var(--muted)}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.tools input{flex:1 1 220px;min-width:0;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px}
+.tools input::placeholder{color:#6f7897}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--muted);padding:9px 12px;cursor:pointer;font-size:13px;font-weight:600}
+.seg button.on{background:rgba(255,216,107,.16);color:var(--gold)}
+
+.count{font-size:12.5px;color:var(--muted);margin:4px 2px 8px}
+ul.users{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+ul.users li{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 2px;border-bottom:1px solid var(--line)}
+ul.users li.is-blocked{background:var(--redbg)}
+.u-name{font-weight:700;color:#fff}
+.u-name small{font-weight:600;color:var(--muted);margin-left:6px}
+.u-meta{grid-column:1 / 2;font-size:13px;color:var(--muted)}
+.u-meta a{color:var(--teal);text-decoration:none}
+.u-act{grid-row:1 / 3;grid-column:2;align-self:center}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;margin-left:6px;vertical-align:2px}
+.tag.b{background:rgba(255,138,149,.18);color:var(--red)}
+.tag.g{background:rgba(143,227,214,.14);color:var(--teal)}
+.empty{padding:28px 8px;text-align:center;color:var(--muted)}
+.err{margin:12px 0;padding:10px 14px;border-radius:10px;background:var(--redbg);border:1px solid rgba(255,138,149,.4);color:var(--red);font-size:13.5px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SB Treasury Tool · Admin</h1>
+      <div class="who" id="who"></div>
+    </div>
+    <button class="btn" id="outBtn" hidden>Logout</button>
+  </header>
+
+  <section id="vLoading" class="center"><p>ஏற்றுகிறது…</p></section>
+
+  <section id="vLogin" class="center" hidden>
+    <p>நிர்வாகி Gmail மூலம் மட்டுமே இந்தப் பக்கத்தைத் திறக்க முடியும்.</p>
+    <button class="btn gold" id="loginBtn">Google மூலம் Login</button>
+    <div class="err" id="loginErr" hidden></div>
+  </section>
+
+  <section id="vDenied" class="center" hidden>
+    <p>இந்த Gmail-க்கு Admin அனுமதி இல்லை. நிர்வாகி Gmail மூலம் Login செய்யவும்.</p>
+    <button class="btn" id="deniedOut">வேறு Gmail-ல் Login</button>
+  </section>
+
+  <section id="vMain" hidden>
+    <div class="stats">
+      <div><b id="sTotal">0</b><span>மொத்த பயனர்கள்</span></div>
+      <div><b id="sToday">0</b><span>இன்று புதிதாக</span></div>
+      <div><b id="sWeek">0</b><span>7 நாட்களில் பயன்படுத்தியவர்கள்</span></div>
+      <div><b id="sBlocked">0</b><span>Block செய்யப்பட்டவர்கள்</span></div>
+    </div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="பெயர், Email, அலுவலகம், Mobile மூலம் தேடுக">
+      <div class="seg" role="group">
+        <button data-f="all" class="on">அனைவரும்</button>
+        <button data-f="active">Active</button>
+        <button data-f="blocked">Blocked</button>
+      </div>
+      <button class="btn" id="refresh">Refresh</button>
+      <button class="btn" id="csv">Excel (CSV)</button>
+    </div>
+    <div class="err" id="mainErr" hidden></div>
+    <div class="count" id="count"></div>
+    <ul class="users" id="list"></ul>
+  </section>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const ADMIN_EMAIL = "learn2teach1989@gmail.com";
+const app = initializeApp({
+  apiKey: "AIzaSyDbepB9occVQ07LYzqq9ZgsXwnP3zHhSRQ",
+  authDomain: "sbtreasury-tool.firebaseapp.com",
+  projectId: "sbtreasury-tool",
+  storageBucket: "sbtreasury-tool.firebasestorage.app",
+  messagingSenderId: "582023168531",
+  appId: "1:582023168531:web:31c380f588bdc1dfbe35e6"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let users = [], filter = 'all';
+
+function view(v){ ['vLoading','vLogin','vDenied','vMain'].forEach(x => $(x).hidden = x !== v); }
+const toDate = (t) => t && t.toDate ? t.toDate() : null;
+const fmt = (d) => d ? d.toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+
+onAuthStateChanged(auth, async (user) => {
+  $('who').textContent = user ? user.email : '';
+  $('outBtn').hidden = !user;
+  if (!user) return view('vLogin');
+  if ((user.email || '').toLowerCase() !== ADMIN_EMAIL) return view('vDenied');
+  view('vMain'); load();
+});
+
+$('loginBtn').onclick = async () => {
+  $('loginErr').hidden = true;
+  try{ const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt:'select_account' }); await signInWithPopup(auth, p); }
+  catch(e){ if (e.code !== 'auth/popup-closed-by-user'){ $('loginErr').textContent = 'Login தோல்வி: ' + (e.code || e.message); $('loginErr').hidden = false; } }
+};
+$('outBtn').onclick = $('deniedOut').onclick = () => signOut(auth);
+
+async function load(){
+  $('mainErr').hidden = true; $('count').textContent = 'ஏற்றுகிறது…'; $('list').innerHTML = '';
+  try{
+    const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc')));
+    users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    stats(); render();
+  }catch(e){
+    $('count').textContent = '';
+    $('mainErr').textContent = 'பட்டியலை ஏற்ற முடியவில்லை (' + (e.code || e.message) + '). Firestore Rules சரியாக Publish செய்யப்பட்டுள்ளதா என்று பார்க்கவும்.';
+    $('mainErr').hidden = false;
+  }
+}
+function stats(){
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate()), week = now - 7*864e5;
+  $('sTotal').textContent = users.length;
+  $('sToday').textContent = users.filter(u => (toDate(u.createdAt)||0) >= today).length;
+  $('sWeek').textContent = users.filter(u => (toDate(u.lastLogin)||0) >= week).length;
+  $('sBlocked').textContent = users.filter(u => u.blocked).length;
+}
+function visible(){
+  const q = $('q').value.trim().toLowerCase();
+  return users.filter(u => (filter === 'all' || (filter === 'blocked') === !!u.blocked) &&
+    (!q || [u.name, u.email, u.office, u.mobile, u.designation].join(' ').toLowerCase().includes(q)));
+}
+function render(){
+  const list = visible();
+  $('count').textContent = list.length + ' பேர் காட்டப்படுகிறார்கள்';
+  if (!list.length){ $('list').innerHTML = '<li class="empty" style="display:block">' + (users.length ? 'தேடலுக்குப் பொருந்தும் பயனர் இல்லை.' : 'இதுவரை யாரும் பதிவு செய்யவில்லை. Tool-ல் முதல் பதிவு நடந்ததும் இங்கே தெரியும்.') + '</li>'; return; }
+  $('list').innerHTML = list.map(u => `
+    <li class="${u.blocked ? 'is-blocked' : ''}">
+      <div class="u-name">${esc(u.name)}<small>${esc(u.designation)}</small>${u.blocked ? '<span class="tag b">Blocked</span>' : ''}${u.provider === 'google' ? '<span class="tag g">Google</span>' : ''}</div>
+      <div class="u-meta">
+        ${esc(u.office)}<br>
+        <a href="mailto:${esc(u.email)}">${esc(u.email)}</a> · <a href="tel:${esc(u.mobile)}">${esc(u.mobile)}</a><br>
+        பதிவு: ${fmt(toDate(u.createdAt))} · கடைசியாக: ${fmt(toDate(u.lastLogin))} · ${u.loginCount || 0} முறை
+      </div>
+      <div class="u-act">
+        ${u.blocked
+          ? `<button class="btn unblock" data-id="${esc(u.id)}" data-b="0">Unblock</button>`
+          : `<button class="btn block" data-id="${esc(u.id)}" data-b="1">Block</button>`}
+      </div>
+    </li>`).join('');
+}
+$('list').onclick = async (e) => {
+  const b = e.target.closest('button[data-id]'); if (!b) return;
+  const u = users.find(x => x.id === b.dataset.id); const block = b.dataset.b === '1';
+  if (!confirm((block ? 'Block' : 'Unblock') + ' செய்யவா?\n\n' + u.name + '\n' + u.email)) return;
+  b.disabled = true;
+  try{ await updateDoc(doc(db, 'users', u.id), { blocked: block }); u.blocked = block; stats(); render(); }
+  catch(err){ alert('மாற்ற முடியவில்லை: ' + (err.code || err.message)); b.disabled = false; }
+};
+$('q').oninput = render;
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b)); filter = b.dataset.f; render();
+});
+$('refresh').onclick = load;
+$('csv').onclick = () => {
+  const cols = ['name','designation','office','mobile','email','provider','blocked','createdAt','lastLogin','loginCount'];
+  const cell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = visible().map(u => cols.map(c => cell(c === 'createdAt' || c === 'lastLogin' ? fmt(toDate(u[c])) : u[c])).join(','));
+  const blob = new Blob(['\ufeff' + cols.join(',') + '\n' + rows.join('\n')], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sbtreasury-users.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+</script>
+</body>
+</html>
