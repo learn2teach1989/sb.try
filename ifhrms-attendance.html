@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ta"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IFHRMS Training Attendance - DT Madurai</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@600;800&family=Noto+Sans+Tamil:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--ink:#10302b;--pri:#0e6b5c;--gold:#d9a441;--bg:#eef3f1;--card:#fff;--line:#c9d8d3;--bad:#b3392f;--mut:#5b716b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Noto Sans Tamil",system-ui,sans-serif}
+header{background:var(--ink);color:#fff;padding:18px 20px;border-bottom:4px solid var(--gold)}
+header h1{margin:0;font:800 22px/1.2 "Baloo Thambi 2",sans-serif}
+header p{margin:2px 0 0;color:#b9d3cc;font-size:13px}
+main{max-width:980px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+h2{font:600 18px "Baloo Thambi 2",sans-serif;margin:0 0 12px}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+button{font:600 15px "Noto Sans Tamil",sans-serif;padding:11px 18px;border:0;border-radius:6px;background:var(--pri);color:#fff;cursor:pointer}
+button.alt{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+button:disabled{opacity:.5;cursor:wait}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:18px}
+.warn{background:#fff6dd;border:1px solid var(--gold);padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px}
+canvas#sig{width:100%;height:150px;border:2px dashed var(--pri);border-radius:8px;background:#fbfdfc;touch-action:none;display:block}
+.qrwrap{display:flex;gap:28px;flex-wrap:wrap;align-items:center}
+#qr{padding:14px;background:#fff;border:3px solid var(--ink);border-radius:10px;line-height:0}
+.count{font:800 96px/1 "Baloo Thambi 2",sans-serif;color:var(--pri)}
+.cl{color:var(--mut);font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.stat b{font:800 22px "Baloo Thambi 2",sans-serif;display:block;color:var(--pri)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+th{background:#e3eeea}
+td img{height:34px;display:block}
+.ok{text-align:center;padding:30px 10px}
+.tick{width:84px;height:84px;border-radius:50%;background:var(--pri);margin:0 auto 12px;display:grid;place-items:center;animation:pop .45s ease-out}
+.tick svg{width:44px;height:44px;stroke:#fff;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+@media(max-width:560px){.g2{grid-template-columns:1fr}.count{font-size:72px}}
+@media(prefers-reduced-motion:reduce){.tick{animation:none}}
+@media print{.noprint,header button{display:none!important}body{background:#fff}.card{border:0}body.poster #reportBox{display:none}body:not(.poster) #posterBox{display:none}}
+</style></head><body>
+<header><h1>IFHRMS பயிற்சி வருகைப் பதிவு</h1><p>District Treasury, Madurai · Monthly IFHRMS Update Training</p></header>
+<main id="app"></main>
+<script>
+const API="https://script.google.com/macros/s/AKfycbwD964xNlq4EuWdAs-31ept-Z270KMpawE3l1iDKHzkLhbXsqmj3cFcq0_9nPIyeNRCeQ/exec";
+const $=s=>document.querySelector(s), P=new URLSearchParams(location.search), SID=P.get('s');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dmy=d=>d.split('-').reverse().join('-');
+const ready=()=>API.startsWith('http');
+SID?attendee():admin();
+
+/* ---------- ATTENDEE (QR scan) ---------- */
+function attendee(){
+ const T=P.get('t')||'IFHRMS Training', D=P.get('d')||'';
+ const saved=JSON.parse(localStorage.getItem('ifhrms_me')||'{}');
+ $('#app').innerHTML=`<div class="card" id="box"><h2>${esc(T)}</h2><div class="cl">${D?dmy(D):''}</div>
+ <label>DDO Code</label><input id="ddo" value="${esc(saved.ddo)}" inputmode="numeric" autocomplete="off">
+ <label>Office Name</label><input id="office" value="${esc(saved.office)}">
+ <div class="g2"><div><label>Employee Name</label><input id="name" value="${esc(saved.name)}"></div>
+ <div><label>Employee ID</label><input id="eid" value="${esc(saved.eid)}" autocomplete="off"></div>
+ <div><label>Role</label><select id="role"><option value="">தேர்வு செய்க / Select</option><option>HR</option><option>Finance</option></select></div>
+ <div><label>Mobile Number</label><input id="mob" value="${esc(saved.mob)}" inputmode="numeric" maxlength="10"></div></div>
+ <label>Office Mail</label><input id="mail" type="email" value="${esc(saved.mail)}">
+ <label>Signature (விரலால் கையொப்பமிடவும்)</label><canvas id="sig" width="600" height="200"></canvas>
+ <div style="margin-top:8px"><button class="alt" id="clr" type="button">Clear</button></div>
+ <div class="err" id="err"></div><button id="go" style="width:100%">வருகை பதிவு செய் / Submit</button></div>`;
+ $('#role').value=saved.role||'';
+ const c=$('#sig'),x=c.getContext('2d');let dr=false,inked=false;
+ x.lineWidth=4;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#10302b';
+ const pt=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+ c.onpointerdown=e=>{dr=true;c.setPointerCapture(e.pointerId);x.beginPath();x.moveTo(...pt(e))};
+ c.onpointermove=e=>{if(!dr)return;x.lineTo(...pt(e));x.stroke();inked=true};
+ c.onpointerup=c.onpointercancel=()=>dr=false;
+ $('#clr').onclick=()=>{x.clearRect(0,0,c.width,c.height);inked=false};
+ $('#go').onclick=async()=>{
+  const v=k=>$('#'+k).value.trim(), err=m=>$('#err').textContent=m;
+  const d={s:SID,t:T,ddo:v('ddo'),office:v('office'),name:v('name'),id:v('eid'),role:v('role'),mail:v('mail'),mobile:v('mob')};
+  if(!d.ddo||!d.office||!d.name||!d.id)return err('எல்லா விவரங்களையும் நிரப்பவும் / Fill all details.');
+  if(!d.role)return err('Role தேர்வு செய்யவும் (HR / Finance).');
+  if(!/^[6-9]\d{9}$/.test(d.mobile))return err('சரியான 10 இலக்க Mobile Number கொடுக்கவும்.');
+  if(!/^\S+@\S+\.\S+$/.test(d.mail))return err('சரியான Office Mail கொடுக்கவும்.');
+  if(!inked)return err('கையொப்பம் இடவும் / Please sign.');
+  if(!ready())return err('Tool setup முடிக்கப்படவில்லை (Apps Script URL).');
+  d.sig=c.toDataURL('image/png');err('');$('#go').disabled=true;$('#go').textContent='சேமிக்கிறது... தயவுசெய்து காத்திருக்கவும்';
+  const HINT=' (Admin: Apps Script → Deploy → New deployment செய்து URL மாற்றவும்)';
+  const send=async()=>{
+   try{const pre=await jp({act:'chk',s:SID,id:d.id},5000);if(pre.found)return{dup:true}}catch(_){}
+   try{await fetch(API,{method:'POST',mode:'no-cors',body:JSON.stringify(d)})}
+   catch(e){throw new Error('Network பிழை. Internet சரிபார்க்கவும்.')}
+   let got=false;
+   for(let i=0;i<4;i++){
+    await new Promise(r=>setTimeout(r,1500));
+    try{const r=await jp({act:'chk',s:SID,id:d.id},6000);got=true;if(r.found)return{ok:true}}catch(_){}
+   }
+   throw new Error(got?'Server-ல் சேமிக்கப்படவில்லை. மீண்டும் முயற்சிக்கவும்.'+HINT:'Server பதில் வரவில்லை.'+HINT);
+  };
+  try{
+   const r=await send();
+   if(r.dup)throw new Error('இந்த Employee ID ஏற்கனவே இந்த session-ல் பதிவாகியுள்ளது.');
+   if(!r.ok)throw new Error('Save ஆகவில்லை. மீண்டும் முயற்சிக்கவும்.');
+   localStorage.setItem('ifhrms_me',JSON.stringify({ddo:d.ddo,office:d.office,name:d.name,eid:d.id,role:d.role,mob:d.mobile,mail:d.mail}));
+   $('#box').innerHTML=`<div class="ok"><div class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h2>வருகை பதிவு செய்யப்பட்டது</h2><div class="cl">${esc(d.name)} · ${esc(d.office)}<br>நன்றி! You may close this page.${r.unverified?'<br><small>பதிவு அனுப்பப்பட்டது</small>':''}</div></div>`;
+  }catch(e){err(e.message.includes('Failed')?'Network பிழை. Internet சரிபார்க்கவும்.':e.message);$('#go').disabled=false;$('#go').textContent='வருகை பதிவு செய் / Submit'}
+ };
+}
+
+/* ---------- ADMIN (DT staff) ---------- */
+let rows=[],timer=null;
+function admin(){
+ const today=new Date().toISOString().slice(0,10), last=JSON.parse(localStorage.getItem('ifhrms_last')||'{}');
+ $('#app').innerHTML=`${ready()?'':'<div class="warn noprint">⚠ Setup pending: file-ன் மேலே <b>API</b> variable-ல் Google Apps Script URL paste செய்யவும்.</div>'}
+ <div class="tabs noprint"><button class="on" id="t1">புதிய Session + QR</button><button id="t2">Attendance Report</button></div>
+ <section id="posterBox"><div class="card"><div class="noprint">
+  <div class="g2"><div><label>Training Title</label><input id="ttl" value="${esc(last.t||'IFHRMS Update Training')}"></div>
+  <div><label>Date</label><input id="dt" type="date" value="${esc(last.s||today)}"></div></div>
+  <div style="margin-top:14px"><button id="mk">QR உருவாக்கு</button></div></div>
+  <div id="qout" style="display:none;margin-top:18px"><div class="qrwrap"><div id="qr"></div>
+  <div><div class="cl" id="qtl"></div><div class="count" id="live">–</div><div class="cl">பதிவு செய்தவர்கள் / checked in</div>
+  <div class="noprint" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="alt" id="cp">Link copy</button><button class="alt" id="pp">Poster print</button></div></div></div>
+  <div class="cl" style="margin-top:12px">Scan செய்து Details நிரப்பவும் · Scan the QR and fill your details</div></div></div></section>
+ <section id="reportBox" style="display:none"><div class="card"><div class="noprint g2">
+  <div><label>Session Date</label><input id="rs" type="date" value="${esc(last.s||today)}"></div>
+  <div><label>Admin Key</label><input id="rk" type="password" value="${esc(sessionStorage.getItem('ifk')||'')}" autocomplete="off"></div></div>
+  <div class="noprint" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button id="ld">Report எடு</button>
+  <button class="alt" id="csv">Excel/CSV</button><button class="alt" id="pr">Print</button>
+  <label style="margin:0 0 0 6px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="lv" style="width:auto"> Live (10s)</label></div>
+  <div class="err" id="rerr"></div><div class="stats" id="st"></div>
+  <input class="noprint" id="q" placeholder="Search: office / name / DDO code" style="margin-bottom:10px">
+  <div class="tw"><table><thead><tr><th>#</th><th>DDO Code</th><th>Office Name</th><th>Employee Name</th><th>Emp ID</th><th>Role</th><th>Office Mail</th><th>Mobile</th><th>Signature</th><th>Time</th></tr></thead><tbody id="tb"></tbody></table></div></div></section>`;
+ const show=n=>{$('#posterBox').style.display=n==1?'':'none';$('#reportBox').style.display=n==2?'':'none';$('#t1').className=n==1?'on':'';$('#t2').className=n==2?'on':''};
+ $('#t1').onclick=()=>show(1);$('#t2').onclick=()=>show(2);
+ let link='';
+ $('#mk').onclick=()=>{
+  const s=$('#dt').value,t=$('#ttl').value.trim();if(!s||!t)return;
+  link=location.href.split('?')[0]+'?s='+s+'&t='+encodeURIComponent(t)+'&d='+s;
+  localStorage.setItem('ifhrms_last',JSON.stringify({s,t}));
+  $('#qr').innerHTML='';new QRCode($('#qr'),{text:link,width:260,height:260,correctLevel:QRCode.CorrectLevel.M});
+  $('#qtl').innerHTML='<b>'+esc(t)+'</b> · '+dmy(s);$('#qout').style.display='';$('#rs').value=s;poll(s);
+ };
+ $('#cp').onclick=()=>navigator.clipboard.writeText(link).then(()=>$('#cp').textContent='Copied ✓');
+ $('#pp').onclick=()=>{document.body.classList.add('poster');print();document.body.classList.remove('poster')};
+ $('#pr').onclick=()=>print();
+ $('#ld').onclick=()=>fetchRows($('#rs').value,$('#rk').value,true);
+ $('#q').oninput=draw;
+ $('#lv').onchange=e=>{clearInterval(timer);if(e.target.checked)timer=setInterval(()=>fetchRows($('#rs').value,$('#rk').value),10000)};
+ $('#csv').onclick=()=>{
+  const h=['S.No','DDO Code','Office Name','Employee Name','Employee ID','Role','Office Mail','Mobile'];
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const t=[h.map(q).join(',')].concat(rows.map((r,i)=>[i+1,r.ddo,r.office,r.name,r.id,r.role,r.mail,r.mobile].map(q).join(','))).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv'}));a.download='IFHRMS_Attendance_'+$('#rs').value+'.csv';a.click();
+ };
+ function poll(s){clearInterval(window.pl);const k=sessionStorage.getItem('ifk');if(!k||!ready())return;
+  const go=async()=>{try{const r=await get(s,k);$('#live').textContent=r.length}catch(e){}};go();window.pl=setInterval(go,10000)}
+}
+function jp(q,ms=7000){return new Promise((res,rej)=>{
+ const cb='cb'+Date.now()+Math.floor(Math.random()*1e4),sc=document.createElement('script');
+ const cl=()=>{clearTimeout(t);delete window[cb];sc.remove()};
+ const t=setTimeout(()=>{cl();rej(new Error('Failed timeout'))},ms);
+ window[cb]=r=>{cl();res(r)};
+ sc.onerror=()=>{cl();rej(new Error('Failed'))};
+ sc.src=API+'?'+new URLSearchParams({...q,cb}).toString();
+ document.head.appendChild(sc)})}
+async function get(s,k){
+ const r=await jp({s,key:k});
+ if(!r.ok)throw new Error(r.err==='key'?'Admin Key தவறு.':'Load ஆகவில்லை.');return r.rows;
+}
+async function fetchRows(s,k,manual){
+ const e=$('#rerr');if(!ready()){e.textContent='Apps Script URL set செய்யப்படவில்லை.';return}
+ try{e.textContent=manual?'Loading...':'';rows=await get(s,k);sessionStorage.setItem('ifk',k);e.textContent='';draw()}
+ catch(x){e.textContent=x.message.includes('Failed')?'Network பிழை.':x.message}
+}
+function draw(){
+ const q=($('#q').value||'').toLowerCase();
+ const f=rows.filter(r=>[r.ddo,r.office,r.name,r.id].join(' ').toLowerCase().includes(q));
+ const off=new Set(rows.map(r=>r.ddo+'|'+r.office)).size, hr=rows.filter(r=>r.role==='HR').length;
+ $('#st').innerHTML=`<div class="stat"><b>${rows.length}</b>Total</div><div class="stat"><b>${off}</b>Offices</div><div class="stat"><b>${hr}</b>HR</div><div class="stat"><b>${rows.length-hr}</b>Finance</div>`;
+ $('#tb').innerHTML=f.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.ddo)}</td><td>${esc(r.office)}</td><td>${esc(r.name)}</td><td>${esc(r.id)}</td><td>${esc(r.role)}</td><td>${esc(r.mail)}</td><td>${esc(r.mobile)}</td><td>${/^data:image\/png;base64,/.test(r.sig)?`<img src="${r.sig}" alt="sign">`:''}</td><td>${new Date(r.time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</td></tr>`).join('')||'<tr><td colspan="10" style="text-align:center;color:#5b716b">இன்னும் பதிவு இல்லை</td></tr>';
+}
+</script></body></html>
